@@ -1,9 +1,7 @@
 from pydantic_settings import BaseSettings
-from typing import List, Optional
-import os
+from typing import List
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения из .env файла
 load_dotenv()
 
 
@@ -30,6 +28,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [
@@ -40,14 +39,9 @@ class Settings(BaseSettings):
 
     # URL приложения
     DOMAIN_URL: str = "http://localhost"
-    REACT_APP_PUBLIC_URL: str = "http://localhost:8000"
-    
 
     @property
     def DATABASE_URL(self) -> str:
-        """
-        Динамическое формирование URL для базы данных
-        """
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:"
             f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
@@ -56,9 +50,6 @@ class Settings(BaseSettings):
 
     @property
     def SYNC_DATABASE_URL(self) -> str:
-        """
-        URL для синхронных операций (например, Alembic)
-        """
         return (
             f"postgresql://{self.POSTGRES_USER}:"
             f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:"
@@ -70,5 +61,4 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 
-# Создаем экземпляр настроек
 settings = Settings()

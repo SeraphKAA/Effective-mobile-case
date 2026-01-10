@@ -1,7 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import event, Integer, text
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import event, text
 from app.config import settings
 from typing import AsyncGenerator
 import logging
@@ -9,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Создаем асинхронный движок для PostgreSQL с asyncpg драйвером
+# асинхронный движок для бд
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=getattr(settings, "DATABASE_ECHO", False),
@@ -19,7 +18,6 @@ engine = create_async_engine(
     connect_args={"server_settings": {"jit": "off", "application_name": "fastapi_app"}},
 )
 
-# Создаем фабрику сессий
 AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
@@ -30,10 +28,6 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 # Базовый класс для моделей
-# class BaseModel(DeclarativeBase):
-#     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-
-
 class BaseModel(DeclarativeBase):
     pass
 
@@ -46,24 +40,10 @@ async def create_enums():
     from sqlalchemy import text
 
     async with engine.connect() as conn:
-        # Создаем ENUM для ролей пользователя
         await conn.execute(
             text(
                 "DO $$ BEGIN "
                 "CREATE TYPE user_role_enum AS ENUM ('guest', 'user', 'moderator', 'admin', 'super_admin'); "
-                "EXCEPTION WHEN duplicate_object THEN null; "
-                "END $$;"
-            )
-        )
-
-        # Создаем ENUM для фракций
-        await conn.execute(
-            text(
-                "DO $$ BEGIN "
-                "CREATE TYPE user_faction_enum AS ENUM ("
-                "'none', 'alliance', 'horde', 'neutral', 'imperial', 'republic', "
-                "'protoss', 'terran', 'zerg', 'order', 'destruction', 'chaos'"
-                "); "
                 "EXCEPTION WHEN duplicate_object THEN null; "
                 "END $$;"
             )
@@ -93,7 +73,6 @@ async def init_db():
     Инициализация базы данных
     """
     try:
-        # Создаем ENUM типы
         await create_enums()
 
         # Создаем таблицы

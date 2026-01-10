@@ -11,7 +11,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 # Импортируем модели и настройки
-from app.database import BaseModel
+from app.database.database import BaseModel
 from app.config import settings
 from app.models import UserModel
 

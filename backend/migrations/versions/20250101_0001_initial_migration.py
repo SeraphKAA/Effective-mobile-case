@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade() -> None:
     op.create_table('users',
-        sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True, nullable=False),
         sa.Column('login', sa.String(length=50), nullable=False),
         sa.Column('nickname', sa.String(length=50), nullable=False),
         sa.Column('hashed_password', sa.String(length=255), nullable=False),
