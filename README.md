@@ -1,5 +1,6 @@
 # Effective-mobile-case
 Тестовое задание от компании Effective Mobile
+В тз не указано какой стек нужно использовать, так что написал на fastaopi, sqlalchemy + alembic
 
 ## Установка
 
