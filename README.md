@@ -25,6 +25,7 @@ docker compose up --build
 
 Сайт доступен по протоколу HTTP. 
 Swagger сервера доступен по порту 8000 на эндпоинте /api/docs.
+Redoc сервера доступен по порту 8000 на эндпоинте /api/redoc.
 
 ## Дополнительно
 
@@ -50,6 +51,8 @@ make down
 
 Также есть эндпоинты длля куки, так как через них можно было сделать эндпоинты, но сделал без них.
 
+Для проверки некоторых эндпоинтов были созданы пользователи всех возможных ролей
+
 ## Результат
 
 Возможно добавлю если не забуду фотки из сваггера и мейби добавлю еще тесты если нужны будут
@@ -67,5 +70,19 @@ make down
 Тривиальное, по типу, пароля (хранится в бд захешированный пароль) и id тоже имеется, но не указываю.
 
 
-Все существующие эндпоинты
+Все существующие эндпоинты:
 ![ImageAlt](https://github.com/SeraphKAA/Effective-mobile-case/blob/main/photoes/all_endpoints.png)
+
+Результат получения информации про всех пользователей:
+![ImageAlt](https://github.com/SeraphKAA/Effective-mobile-case/blob/main/photoes/result_1.png)
+
+Результат создания пользователя:
+![ImageAlt](https://github.com/SeraphKAA/Effective-mobile-case/blob/main/photoes/result_2.png)
+
+Результат удаления пользователя:
+![ImageAlt](https://github.com/SeraphKAA/Effective-mobile-case/blob/main/photoes/result_3.png)
+
+Результат получения данных аутентифицированного пользователя:
+![ImageAlt](https://github.com/SeraphKAA/Effective-mobile-case/blob/main/photoes/result_7.png)
+
+Другие эндпоинты я не показываю, там особо ничего такого, просто изменение полей
