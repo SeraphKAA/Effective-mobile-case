@@ -7,6 +7,7 @@ from app.schemas.user import (
     UserInDto,
     UserInChangeRoleDto,
     ChangeUserActivityInDto,
+    UserChangeFieldInDto
 )
 from app.controllers import user as user_controller
 from app.database.database import get_db
@@ -126,4 +127,11 @@ async def delete_email_for_user(
     return await user_controller.delete_email(user, session)
 
 
-# эндпоинт на изменение полей bio, nickname, login. password
+@router.patch("/change-field", response_model=UserOutDto)
+async def change_user_field_endpoint(
+    dto: UserChangeFieldInDto,
+    user=Depends(user_controller.authentication.get_current_user),
+    session: AsyncSession = Depends(get_db)
+):
+    """Изменение поля у текущего пользователя"""
+    return await user_controller.change_user_field(dto, user, session)

@@ -3,6 +3,8 @@ from app.schemas.user import (
     UserInDto,
     UserOutDto,
     UserTokensDto,
+    UserChangeFieldInDto,
+    UserField,
 )
 from .authentication import (
     create_refresh_token,
@@ -20,7 +22,6 @@ from datetime import datetime, timezone
 
 
 async def create_user(user_in_dto: UserInDto, session: AsyncSession) -> UserOutDto:
-    # Валидация имени
     if not re.fullmatch(r"[A-Za-zА-Яа-яёЁ\s\-]+", user_in_dto.nickname):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -111,7 +112,10 @@ async def login(
 
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=500, detail=f"Ошибка при обновлении last_login для пользователя {user.id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при обновлении last_login для пользователя {user.id}: {e}",
+        )
 
     access_token = create_access_token(user)
     refresh_token = create_refresh_token(user)
@@ -183,3 +187,116 @@ async def get_user_by_id(user_id: int, session: AsyncSession) -> UserOutDto:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
     return UserOutDto.new(user)
+
+
+async def change_user_field(
+    dto: UserChangeFieldInDto, user: UserModel, session: AsyncSession
+) -> UserOutDto:
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Пользователь деактивирован")
+
+    try:
+        match dto.field:
+            case UserField.NICKNAME:
+                if len(dto.text) < 3:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Никнейм должен содержать минимум 2 символа",
+                    )
+
+                if len(dto.text) > 30:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Никнейм не должен превышать 30 символов",
+                    )
+
+                if not re.fullmatch(r"[A-Za-zА-Яа-яёЁ\s\-]+", dto.text):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Никнейм должно содержать только буквы, пробелы и дефисы.",
+                    )
+
+                query = select(UserModel).where(UserModel.nickname == dto.text)
+                result = await session.execute(query)
+                existing_user = result.scalar_one_or_none()
+                if not existing_user:
+                    user.nickname = dto.text
+                else:
+                    raise HTTPException(
+                        status_code=400, detail="Такой никнейм уже занят"
+                    )
+
+            case UserField.LOGIN:
+                query = select(exists().where(UserModel.login == dto.text))
+                result = await session.execute(query)
+                if result.scalar():
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Логин уже существует. Пожалуйста, выберите другой.",
+                    )
+
+                if len(dto.text) < 6:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Логин должен содержать минимум 6 символа",
+                    )
+
+                if len(dto.text) > 60:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Логин не должен превышать 60 символов",
+                    )
+
+                user.login = dto.text
+
+            case UserField.BIO:
+                if len(dto.text) > 500:
+                    raise HTTPException(
+                        status_code=400, detail="Био не должно превышать 500 символов"
+                    )
+
+                forbidden_words = ["труп", "скам", "мошенник"]
+                for word in forbidden_words:
+                    if word in dto.text.lower():
+                        HTTPException(
+                            status_code=400,
+                            detail=f"Био содержит запрещенное слово: '{word}'",
+                        )
+
+                user.bio = dto.text
+
+            case UserField.PASSWORD:
+                if len(dto.text) < 4:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Пароль должен содержать минимум 4 символа",
+                    )
+
+                if len(dto.text) > 20:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Пароль должен быть не длиннее 20 символов.",
+                    )
+
+                # можно добавить доп проверки на наличие спец символов, заглавных букв и цифр
+                if user.verify_password(dto.text):
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Новый пароль совпадает с текущим",
+                    )
+
+                user.set_password(dto.text)
+
+        await session.commit()
+        await session.refresh(user)
+        return UserOutDto.new(user)
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при обновлении поля {dto.field} значением {dto.text} для пользователя {user.id}: {e}",
+        )

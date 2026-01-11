@@ -2,7 +2,7 @@ from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
 from datetime import datetime
 from app.models.user import UserModel, UserRole
-
+import enum
 
 class UserOutDto(BaseModel):
     id: int
@@ -57,3 +57,15 @@ class UserInChangeRoleDto(BaseModel):
 class ChangeUserActivityInDto(BaseModel):
     activity_flag: bool
     user_id: int
+
+
+class UserField(str, enum.Enum):
+    NICKNAME = "nickname"
+    LOGIN = "login"
+    BIO = "bio"
+    PASSWORD = "password"
+
+
+class UserChangeFieldInDto(BaseModel):
+    field: UserField
+    text: str
