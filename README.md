@@ -66,3 +66,6 @@ make down
 
 Тривиальное, по типу, пароля (хранится в бд захешированный пароль) и id тоже имеется, но не указываю.
 
+
+Все существующие эндпоинты
+![ImageAlt](https://github.com/SeraphKAA/Effective-mobile-case/blob/main/photoes/all_endpoints.png)
