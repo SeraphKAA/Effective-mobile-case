@@ -52,3 +52,8 @@ class UserTokensDto(BaseModel):
 class UserInChangeRoleDto(BaseModel):
     role: UserRole
     user_id: int
+
+
+class ChangeUserActivityInDto(BaseModel):
+    activity_flag: bool
+    user_id: int

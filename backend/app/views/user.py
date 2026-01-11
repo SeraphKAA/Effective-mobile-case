@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, Path, Header, Response, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.user import UserOutDto, UserInDto, UserInChangeRoleDto
+from app.schemas.user import (
+    UserOutDto,
+    UserInDto,
+    UserInChangeRoleDto,
+    ChangeUserActivityInDto,
+)
 from app.controllers import user as user_controller
 from app.database.database import get_db
 
@@ -80,3 +85,45 @@ async def change_user_role(
 ):
     """Изменение роли пользователя по user_id"""
     return await user_controller.change_role(dto, user, session)
+
+
+@router.patch("/change-activity", response_model=UserOutDto)
+async def change_user_activity(
+    dto: ChangeUserActivityInDto,
+    user=Depends(user_controller.authentication.get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    """Изменение активности пользователя по user_id"""
+    return await user_controller.change_user_activity(dto, user, session)
+
+
+@router.patch("/email", response_model=UserOutDto)
+async def set_email_for_user(
+    email: str,
+    user=Depends(user_controller.authentication.get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    """Установка почты для текущего пользователя"""
+    return await user_controller.set_email(email, user, session)
+
+
+@router.patch("/email-active", response_model=UserOutDto)
+async def verify_email_for_user(
+    user=Depends(user_controller.authentication.get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    """Заглушка установки состояния проверки почты для текущего пользователя"""
+    # можно конечно было сделать через smtp протокол (соответственную библиотеку) но решил что это излишне для тестового задания
+    return await user_controller.set_email_active(user, session)
+
+
+@router.patch("/delete-email", response_model=UserOutDto)
+async def delete_email_for_user(
+    user=Depends(user_controller.authentication.get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    """Удаление почты для текущего пользователя"""
+    return await user_controller.delete_email(user, session)
+
+
+# эндпоинт на изменение полей bio, nickname, login. password

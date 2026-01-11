@@ -1,10 +1,9 @@
-from sqlalchemy import String, Boolean, DateTime, Text, Enum, func, Integer
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID, ENUM
+from sqlalchemy import String, Boolean, DateTime, Text, func, Integer
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.dialects.postgresql import ENUM
 from app.database.database import BaseModel
 from datetime import datetime
-from typing import Optional, List
-import uuid
+from typing import Optional
 import enum
 from passlib.hash import bcrypt
 

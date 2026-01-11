@@ -8,7 +8,7 @@ from app.models.user import UserModel
 router = APIRouter(prefix="/cookie", tags=["Cookies"])
 
 @router.delete("/delete", status_code=204)
-async def Logout(response: Response):
+async def Delete_cookies(response: Response):
     """Удаление куки user_id, role, access_token, refresh_token"""
     await cookies_controller.delete_cookies(response)
 

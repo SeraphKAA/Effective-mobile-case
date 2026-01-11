@@ -1,9 +1,8 @@
-from app.models import UserModel, UserRole
+from app.models import UserModel
 from app.schemas.user import (
     UserInDto,
     UserOutDto,
     UserTokensDto,
-    UserInChangeRoleDto,
 )
 from .authentication import (
     create_refresh_token,
@@ -14,9 +13,10 @@ from .authentication import (
 from sqlalchemy import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import HTTPException, status, Response, Depends
+from fastapi import HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
 import re
+from datetime import datetime, timezone
 
 
 async def create_user(user_in_dto: UserInDto, session: AsyncSession) -> UserOutDto:
@@ -104,6 +104,15 @@ async def login(
             detail="Пользователь деактивирован. Обратитесь к администратору.",
         )
 
+    try:
+        user.last_login = datetime.now(timezone.utc)
+        await session.commit()
+        await session.refresh(user)
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка при обновлении last_login для пользователя {user.id}: {e}")
+
     access_token = create_access_token(user)
     refresh_token = create_refresh_token(user)
 
@@ -174,59 +183,3 @@ async def get_user_by_id(user_id: int, session: AsyncSession) -> UserOutDto:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
     return UserOutDto.new(user)
-
-
-async def change_role(
-    dto: UserInChangeRoleDto, user: UserModel, session: AsyncSession
-) -> UserOutDto:
-    # Проверки у пользователя, который изменяет роль
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-
-    if user.role == UserRole.GUEST or user.role == UserRole.USER:
-        raise HTTPException(
-            status_code=403,
-            detail="У пользователя недостаточно прав на изменеине данных",
-        )
-
-    query = select(UserModel).where(UserModel.id == dto.user_id)
-    result = await session.execute(query)
-    user_to_change = result.scalar_one_or_none()
-
-    if not user_to_change:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-
-    if user_to_change.id == user.id:
-        raise HTTPException(
-            status_code=400, detail="Нельзя изменить свою собственную роль"
-        )
-
-    # Проверка иерархии для изменения роли
-    if user.role == UserRole.MODERATOR:
-        if dto.role == UserRole.ADMIN:
-            raise HTTPException(
-                status_code=403, detail="Модератор не может назначать администраторов"
-            )
-        if user_to_change.role == UserRole.MODERATOR:
-            raise HTTPException(
-                status_code=403,
-                detail="Модератор не может изменять роли других модераторов",
-            )
-
-    if not user_to_change:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-
-    try:
-        if user_to_change.role == dto.role:
-            return UserOutDto.new(user_to_change)
-        else:
-            user_to_change.role = dto.role
-            await session.commit()
-            await session.refresh(user_to_change)
-            return UserOutDto.new(user_to_change)
-
-    except Exception as e:
-        await session.rollback()
-        raise HTTPException(
-            status_code=500, detail=f"Ошибка при обновлении роли: {str(e)}"
-        )
